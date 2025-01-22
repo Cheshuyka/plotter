@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            background: white;
+            padding: 40px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            border-color: #ff5722;
+            outline: none;
+        }
+
+        .form-group .error {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .form-group input.invalid {
+            border-color: red;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 1rem;
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #e64a19;
+        }
+
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .login-link a {
+            color: #ff5722;
+            text-decoration: none;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Регистрация</h1>
+        <form id="registrationForm">
+            <!-- Имя -->
+            <div class="form-group">
+                <label for="name">Имя</label>
+                <input type="text" id="name" name="name" required>
+                <div class="error" id="nameError">Пожалуйста, введите ваше имя.</div>
+            </div>
+
+            <!-- Почта -->
+            <div class="form-group">
+                <label for="email">Почта</label>
+                <input type="email" id="email" name="email" required>
+                <div class="error" id="emailError">Пожалуйста, введите корректный email.</div>
+            </div>
+
+            <!-- Пароль -->
+            <div class="form-group">
+                <label for="password">Пароль</label>
+                <input type="password" id="password" name="password" required>
+                <div class="error" id="passwordError">Пароль должен содержать не менее 6 символов.</div>
+            </div>
+
+            <!-- Повторите пароль -->
+            <div class="form-group">
+                <label for="confirmPassword">Повторите пароль</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+                <div class="error" id="confirmPasswordError">Пароли не совпадают.</div>
+            </div>
+
+            <!-- Кнопка регистрации -->
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+
+        <!-- Ссылка на вход -->
+        <div class="login-link">
+            Уже есть аккаунт? <a href="/login">Войти</a>
+        </div>
+    </div>
+
+    <script>
+        // Валидация формы
+        const form = document.getElementById('registrationForm');
+        const nameInput = document.getElementById('name');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+
+        const nameError = document.getElementById('nameError');
+        const emailError = document.getElementById('emailError');
+        const passwordError = document.getElementById('passwordError');
+        const confirmPasswordError = document.getElementById('confirmPasswordError');
+
+        form.addEventListener('submit', async function (event) {
+        event.preventDefault();
+            let isValid = true;
+
+            // Валидация имени
+            if (nameInput.value.trim() === '') {
+                nameError.style.display = 'block';
+                nameInput.classList.add('invalid');
+                isValid = false;
+            } else {
+                nameError.style.display = 'none';
+                nameInput.classList.remove('invalid');
+            }
+
+            // Валидация почты
+            const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailPattern.test(emailInput.value)) {
+                emailError.style.display = 'block';
+                emailInput.classList.add('invalid');
+                isValid = false;
+            } else {
+                emailError.style.display = 'none';
+                emailInput.classList.remove('invalid');
+            }
+
+            // Валидация пароля
+            if (passwordInput.value.length < 6) {
+                passwordError.style.display = 'block';
+                passwordInput.classList.add('invalid');
+                isValid = false;
+            } else {
+                passwordError.style.display = 'none';
+                passwordInput.classList.remove('invalid');
+            }
+
+            // Валидация подтверждения пароля
+            if (confirmPasswordInput.value !== passwordInput.value) {
+                confirmPasswordError.style.display = 'block';
+                confirmPasswordInput.classList.add('invalid');
+                isValid = false;
+            } else {
+                confirmPasswordError.style.display = 'none';
+                confirmPasswordInput.classList.remove('invalid');
+            }
+            if (isValid) {
+                const formData = {
+                    name: nameInput.value.trim(),
+                    email: emailInput.value.trim(),
+                    password: passwordInput.value,
+                };
+
+                try {
+                    const response = await fetch('/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json;charset=utf-8',
+                        },
+                        body: JSON.stringify(formData),
+                    });
+
+                    if (response.ok) {
+                        const result = await response.json();
+                        alert(result.message || 'Регистрация прошла успешно!');
+                        window.location.href = '/login'; // Перенаправляем на страницу входа
+                    } else {
+                        const error = await response.json();
+                        alert(error.message || 'Ошибка при регистрации');
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Произошла ошибка при отправке данных');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

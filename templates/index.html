@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            display: flex;
+            width: 80%;
+            max-width: 1200px;
+            background: white;
+            padding: 40px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+
+        .left {
+            flex: 1;
+            padding-right: 40px;
+        }
+
+        .left h1 {
+            font-size: 3rem;
+            margin: 0;
+            color: #333;
+        }
+
+        .left p {
+            font-size: 1.2rem;
+            color: #666;
+            margin-top: 20px;
+        }
+
+        .buttons {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px; /* Расстояние между кнопками */
+        }
+
+        .buttons a {
+            padding: 10px 20px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none; /* Убираем подчеркивание у ссылок */
+            display: inline-block; /* Чтобы ссылки вели себя как кнопки */
+            text-align: center;
+        }
+
+        .buttons a:first-child {
+            background-color: #ff5722;
+            color: white;
+        }
+
+        .buttons a:first-child:hover {
+            background-color: #e64a19;
+        }
+
+        .buttons a:last-child {
+            background-color: #333;
+            color: white;
+        }
+
+        .buttons a:last-child:hover {
+            background-color: #555;
+        }
+
+        .right {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+    <!-- Include Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Left Half: Greeting -->
+        <div class="left">
+            <h1>Ты аналитик, плоттер!</h1>
+            <p>Красота аналитики в нашей no-code системе.</p>
+            <div class="buttons">
+                <a href="/register">Зарегистрироваться</a>
+                <a href="/login">Войти</a>
+            </div>
+        </div>
+        <!-- Right Half: Line Chart -->
+        <div class="right">
+            <canvas id="lineChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Generate random data for the line chart
+        const labels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн'];
+        const data = {
+            labels: labels,
+            datasets: [{
+                label: 'Продажи',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                data: labels.map(() => Math.floor(Math.random() * 100)), // Random data
+                fill: true, // Fill area under the line
+                tension: 0.4, // Smooth line
+            }]
+        };
+
+        // Create the line chart
+        const ctx = document.getElementById('lineChart').getContext('2d');
+        const lineChart = new Chart(ctx, {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animations: {
+      tension: {
+        duration: 1500,
+        easing: 'linear',
+        from: 1,
+        to: 0,
+        loop: true
+      }
+    },
+
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                    },
+                    tooltip: {
+                        enabled: true,
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
