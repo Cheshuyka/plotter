@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Построение графиков</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f4f4;
+            overflow: hidden; /* Отключаем общий скролл страницы */
+        }
+
+        /* Шапка с именем пользователя */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .header a {
+            color: white;
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-right: 20px;
+        }
+
+        .header a:hover {
+            text-decoration: underline;
+        }
+
+        /* Левая панель с доступными графиками */
+        .left-panel {
+            width: 20%;
+            background: #333;
+            color: white;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto; /* Включаем скролл для левой панели */
+            height: calc(100vh - 60px); /* Высота с учетом шапки */
+            margin-top: 60px; /* Отступ сверху для шапки */
+        }
+
+        .left-panel h2 {
+            margin-top: 0;
+        }
+
+        .graph-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .graph-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #444;
+            cursor: grab;
+            border-radius: 5px;
+        }
+
+        .graph-list li:active {
+            cursor: grabbing;
+        }
+
+        /* Правая панель для построения графиков */
+        .right-panel {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            box-sizing: border-box;
+            overflow-y: auto; /* Включаем скролл для правой панели */
+            height: calc(100vh - 60px); /* Высота с учетом шапки */
+            margin-top: 60px; /* Отступ сверху для шапки */
+        }
+
+        .graph-block {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        .graph-block h3 {
+            margin-top: 0;
+        }
+
+        .graph-block label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        .graph-block input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .graph-block button {
+            padding: 8px 12px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #ff5722;
+            color: white;
+        }
+
+        .graph-block button.delete {
+            background-color: #f44336;
+        }
+
+        .graph-block button.toggle-fields {
+            background-color: #2196F3;
+        }
+
+        .graph-block button:hover {
+            opacity: 0.9;
+        }
+
+        .additional-fields {
+            display: none; /* Скрываем дополнительные поля по умолчанию */
+            margin-top: 10px;
+        }
+
+        .plotly-graph {
+            margin-top: 20px;
+        }
+
+        /* Блок для загрузки датасета */
+        .upload-block {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background: #f9f9f9;
+            text-align: center;
+        }
+
+        .upload-block h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .file-upload {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .file-upload input[type="file"] {
+            display: none; /* Скрываем стандартный input */
+        }
+
+        .file-upload label {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .file-upload label:hover {
+            background-color: #45a049;
+        }
+
+        .file-upload label i {
+            margin-right: 8px;
+        }
+
+        .upload-button {
+            padding: 10px 20px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-button:hover {
+            background-color: #1e88e5;
+        }
+
+        .upload-button i {
+            margin-right: 8px;
+        }
+    </style>
+    <!-- Иконки Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Библиотека Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <!-- Шапка с именем пользователя -->
+    <div class="header">
+        <a href="/profile">Иван Иванов</a> <!-- Замените на имя пользователя -->
+    </div>
+
+    <!-- Левая панель с доступными графиками -->
+    <div class="left-panel">
+        <h2>Доступные графики</h2>
+        <ul class="graph-list">
+            <li data-type="scatterplot" draggable="true">Scatterplot</li>
+            <li data-type="boxplot" draggable="true">Boxplot</li>
+        </ul>
+    </div>
+
+    <!-- Правая панель для построения графиков -->
+    <div class="right-panel" id="rightPanel">
+        <!-- Блок для загрузки датасета -->
+        <div class="upload-block">
+            <h3>Загрузите датасет</h3>
+            <div class="file-upload">
+                <input type="file" id="datasetUpload" accept=".csv, .json">
+                <label for="datasetUpload">
+                    <i class="fas fa-file-upload"></i> Выберите файл
+                </label>
+            </div>
+            <button class="upload-button" id="uploadButton">
+                <i class="fas fa-upload"></i> Загрузить
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Функция для создания блока с параметрами графика
+        function createGraphBlock(type) {
+            const block = document.createElement('div');
+            block.className = 'graph-block';
+
+            // Общие поля для всех графиков
+            let fields = `
+                <h3>${type}</h3>
+                <label for="title">Название графика:</label>
+                <input type="text" class="title" placeholder="Введите название">
+                <label for="xAxis">Ось X:</label>
+                <input type="text" class="xAxis" placeholder="Введите название колонки для оси X">
+                <label for="yAxis">Ось Y:</label>
+                <input type="text" class="yAxis" placeholder="Введите название колонки для оси Y">
+                <button class="toggle-fields">Дополнительные поля</button>
+                <div class="additional-fields">
+            `;
+
+            // Дополнительные поля для Scatterplot
+            if (type === 'scatterplot') {
+                fields += `
+                    <label for="color">Цвет (опционально):</label>
+                    <input type="text" class="color" placeholder="Введите название колонки для цвета">
+                `;
+            }
+
+            // Дополнительные поля для Boxplot
+            if (type === 'boxplot') {
+                fields += `
+                    <label for="hue">Hue (опционально):</label>
+                    <input type="text" class="hue" placeholder="Введите название колонки для hue">
+                `;
+            }
+
+            // Закрываем блок дополнительных полей
+            fields += `</div>`;
+
+            // Кнопки
+            fields += `
+                <button class="plot">Построить график</button>
+                <button class="delete">Удалить</button>
+            `;
+
+            block.innerHTML = fields;
+
+            // Обработчик для кнопки "Дополнительные поля"
+            const toggleButton = block.querySelector('.toggle-fields');
+            const additionalFields = block.querySelector('.additional-fields');
+            toggleButton.addEventListener('click', () => {
+                const currentDisplay = window.getComputedStyle(additionalFields).display;
+                additionalFields.style.display = currentDisplay === 'none' ? 'block' : 'none';
+            });
+
+            // Обработчик для кнопки "Построить график"
+            block.querySelector('.plot').addEventListener('click', () => {
+                const title = block.querySelector('.title').value;
+                const xAxis = block.querySelector('.xAxis').value;
+                const yAxis = block.querySelector('.yAxis').value;
+
+                if (!title || !xAxis || !yAxis) {
+                    alert('Заполните все обязательные поля!');
+                    return;
+                }
+
+                // Проверяем, существует ли уже график
+                let graphContainer = block.querySelector('.plotly-graph');
+                if (graphContainer) {
+                    graphContainer.remove(); // Удаляем старый график
+                }
+
+                // Создаем новый контейнер для графика
+                graphContainer = document.createElement('div');
+                graphContainer.className = 'plotly-graph';
+                block.appendChild(graphContainer);
+
+                // Генерация данных для графика (заглушка)
+                const xData = [1, 2, 3, 4, 5];
+                const yData = [10, 15, 13, 17, 21];
+
+                // Создание графика с помощью Plotly
+                const trace = {
+                    x: xData,
+                    y: yData,
+                    mode: 'lines+markers',
+                    type: 'scatter',
+                    name: title,
+                };
+
+                const layout = {
+                    title: title,
+                    xaxis: { title: xAxis },
+                    yaxis: { title: yAxis },
+                };
+
+                Plotly.newPlot(graphContainer, [trace], layout);
+            });
+
+            // Обработчик для кнопки "Удалить"
+            block.querySelector('.delete').addEventListener('click', () => {
+                block.remove();
+            });
+
+            return block;
+        }
+
+        // Перетаскивание элементов
+        const graphList = document.querySelector('.graph-list');
+        const rightPanel = document.getElementById('rightPanel');
+
+        // Настройка перетаскивания
+        graphList.addEventListener('dragstart', (event) => {
+            event.dataTransfer.setData('text/plain', event.target.dataset.type);
+        });
+
+        // Разрешаем перетаскивание в правую панель
+        rightPanel.addEventListener('dragover', (event) => {
+            event.preventDefault();
+        });
+
+        // Обработка события "drop"
+        rightPanel.addEventListener('drop', (event) => {
+            event.preventDefault();
+            const type = event.dataTransfer.getData('text/plain');
+            const block = createGraphBlock(type);
+            rightPanel.appendChild(block);
+        });
+
+        // Загрузка датасета на сервер
+        const uploadButton = document.getElementById('uploadButton');
+        const datasetUpload = document.getElementById('datasetUpload');
+
+        uploadButton.addEventListener('click', async () => {
+            const file = datasetUpload.files[0];
+            if (!file) {
+                alert('Выберите файл для загрузки!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('dataset', file);
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    alert(result.message || 'Датасет успешно загружен!');
+                } else {
+                    const error = await response.json();
+                    alert(error.message || 'Ошибка при загрузке датасета');
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Произошла ошибка при отправке данных');
+            }
+        });
+    </script>
+</body>
+</html>
