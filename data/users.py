@@ -14,6 +14,7 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):  # пользовате�
     organization = sqlalchemy.Column(sqlalchemy.String)
     # position = sqlalchemy.Column(sqlalchemy.String, default='Не выбрано')
     email = sqlalchemy.Column(sqlalchemy.String, unique=True)
+    dataset_name = sqlalchemy.Column(sqlalchemy.String, unique=True)
     hashed_password = sqlalchemy.Column(sqlalchemy.String)
 
     def set_password(self, password):

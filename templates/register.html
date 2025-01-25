@@ -218,7 +218,7 @@
                     if (response.ok) {
                         const result = await response.json();
                         alert(result.message || 'Регистрация прошла успешно!');
-                        window.location.href = '/login'; // Перенаправляем на страницу входа
+                        window.location.href = '/main'; // Перенаправляем на страницу входа
                     } else {
                         const error = await response.json();
                         alert(error.message || 'Ошибка при регистрации');

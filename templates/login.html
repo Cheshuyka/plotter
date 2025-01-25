@@ -200,7 +200,7 @@
                     if (response.ok) {
                         const result = await response.json();
                         alert(result.message || 'Вход выполнен успешно!');
-                        window.location.href = '/'; // Перенаправляем на защищенную страницу
+                        window.location.href = '/main'; // Перенаправляем на защищенную страницу
                     } else {
                         const error = await response.json();
                         alert(error.message || 'Ошибка при входе');
