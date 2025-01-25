@@ -211,41 +211,62 @@
             color: #333;
         }
 
-    /* Стили для контейнера таблицы */
-.table-container {
-    width: 100%; /* Ширина контейнера */
-    overflow-x: auto; /* Горизонтальная прокрутка */
-    margin-top: 20px; /* Отступ сверху */
-    border: 1px solid #ddd; /* Граница для визуального выделения */
-    border-radius: 5px; /* Скругление углов */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Тень для красоты */
-}
+        /* Стили для контейнера таблицы */
+        .table-container {
+            width: 100%; /* Ширина контейнера */
+            overflow-x: auto; /* Горизонтальная прокрутка */
+            margin-top: 20px; /* Отступ сверху */
+            border: 1px solid #ddd; /* Граница для визуального выделения */
+            border-radius: 5px; /* Скругление углов */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Тень для красоты */
+        }
 
-/* Стили для таблицы */
-table {
-    width: 100%; /* Ширина таблицы */
-    border-collapse: collapse; /* Убираем двойные границы */
-    white-space: nowrap; /* Запрещаем перенос строк в ячейках */
-}
+        /* Стили для таблицы */
+        table {
+            width: 100%; /* Ширина таблицы */
+            border-collapse: collapse; /* Убираем двойные границы */
+            white-space: nowrap; /* Запрещаем перенос строк в ячейках */
+        }
 
-th, td {
-    border: 1px solid #ddd; /* Границы ячеек */
-    padding: 8px; /* Отступы внутри ячеек */
-    text-align: left; /* Выравнивание текста по левому краю */
-}
+        th, td {
+            border: 1px solid #ddd; /* Границы ячеек */
+            padding: 8px; /* Отступы внутри ячеек */
+            text-align: left; /* Выравнивание текста по левому краю */
+        }
 
-th {
-    background-color: #f2f2f2; /* Цвет фона заголовков */
-    font-weight: bold; /* Жирный шрифт для заголовков */
-}
+        th {
+            background-color: #f2f2f2; /* Цвет фона заголовков */
+            font-weight: bold; /* Жирный шрифт для заголовков */
+        }
 
-tr:nth-child(even) {
-    background-color: #f9f9f9; /* Чередующийся цвет фона строк */
-}
+        tr:nth-child(even) {
+            background-color: #f9f9f9; /* Чередующийся цвет фона строк */
+        }
 
-tr:hover {
-    background-color: #f1f1f1; /* Цвет фона при наведении */
-}
+        tr:hover {
+            background-color: #f1f1f1; /* Цвет фона при наведении */
+        }
+
+        .upload-block label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .upload-block input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+
+        .upload-block input[type="text"]::placeholder {
+            color: #999;
+        }
     </style>
     <!-- Иконки Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -279,6 +300,14 @@ tr:hover {
                 </label>
             </div>
             <div id="file-name" class="file-name"></div>
+            <!-- Поле для сепаратора значений -->
+            <label for="delimiter">Сепаратор значений:</label>
+            <input type="text" id="delimiter" placeholder="По умолчанию: запятая (,)" maxlength="1">
+
+            <!-- Поле для разделителя десятичных дробей -->
+            <label for="decimal">Разделитель десятичных дробей:</label>
+            <input type="text" id="decimal" placeholder="По умолчанию: точка (.)" maxlength="1">
+
             <button class="upload-button" id="uploadButton">
                 <i class="fas fa-upload"></i> Загрузить
             </button>
@@ -504,36 +533,42 @@ tr:hover {
 }
 
         uploadButton.addEventListener('click', async () => {
-            const file = datasetUpload.files[0];
-            if (!file) {
-                alert('Выберите файл для загрузки!');
-                return;
-            }
+    const file = datasetUpload.files[0];
+    if (!file) {
+        alert('Выберите файл для загрузки!');
+        return;
+    }
 
-            const formData = new FormData();
-            formData.append('file', file);
+    // Получаем значения из полей ввода
+    const delimiter = document.getElementById('delimiter').value || ',';
+    const decimal = document.getElementById('decimal').value || '.';
 
-            try {
-                statusDiv.textContent = 'Загрузка файла...';
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData,
-                });
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('delimiter', delimiter); // Добавляем сепаратор
+    formData.append('decimal', decimal);     // Добавляем разделитель десятичных
 
-                const result = await response.json();
-
-                if (response.ok) {
-                    statusDiv.textContent = `Файл "${result.filename}" успешно загружен.`;
-                    // После успешной загрузки запрашиваем первые 5 строк
-                    displayFirstRows(result.filename);
-                } else {
-                    statusDiv.textContent = result.error || 'Ошибка при загрузке файла';
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                statusDiv.textContent = 'Произошла ошибка при отправке файла';
-            }
+    try {
+        statusDiv.textContent = 'Загрузка файла...';
+        const response = await fetch('/upload', {
+            method: 'POST',
+            body: formData,  // Отправляем FormData
         });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            statusDiv.textContent = `Файл "${result.filename}" успешно загружен.`;
+            // После успешной загрузки запрашиваем первые 5 строк
+            displayFirstRows(result.filename);
+        } else {
+            statusDiv.textContent = result.error || 'Ошибка при загрузке файла';
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        statusDiv.textContent = 'Произошла ошибка при отправке файла';
+    }
+});
     </script>
 </body>
 </html>

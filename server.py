@@ -157,25 +157,46 @@ def upload_file():
         if file.filename == '' or not allowed_file(file.filename):
             return jsonify({'error': 'Неподдерживаемый формат файла. Используйте CSV или JSON.'}), 400
 
+        # Получаем параметры из формы
+        delimiter = request.form.get('delimiter', ',')  # По умолчанию запятая
+        decimal = request.form.get('decimal', '.')      # По умолчанию точка
+
         # Генерируем уникальное имя файла
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
         filename = secure_filename(f"{timestamp}_{file.filename}")
+        filename = filename.rsplit('.', 1)[0] + '.csv'  # Меняем расширение на .csv
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
-        # Сохраняем файл на сервере
-        file.save(filepath)
+        # Читаем файл в зависимости от его формата
+        if file.filename.endswith('.csv'):
+            # Читаем CSV-файл с учетом разделителей
+            df = pd.read_csv(file, sep=delimiter, decimal=decimal)
+        elif file.filename.endswith('.json'):
+            # Читаем JSON-файл
+            df = pd.read_json(file)
+        else:
+            return jsonify({'error': 'Неподдерживаемый формат файла. Используйте CSV или JSON.'}), 400
 
+        # Сохраняем файл в формате CSV с указанными параметрами
+        df.to_csv(filepath, index=False, sep=',', decimal='.')
+
+        # Обновляем информацию о файле в базе данных
         db_sess = db_session.create_session()
         user = db_sess.query(User).filter(User.id == current_user.id).first()
+
+        # Удаляем старый файл, если он существует
         if user.dataset_name is not None:
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], user.dataset_name)
-            if os.path.exists(file_path):
+            old_filepath = os.path.join(app.config['UPLOAD_FOLDER'], user.dataset_name)
+            if os.path.exists(old_filepath):
                 try:
-                    os.remove(file_path)
+                    os.remove(old_filepath)
                 except Exception as e:
-                    pass
+                    pass  # Игнорируем ошибки при удалении старого файла
+
+        # Сохраняем новое имя файла в базе данных
         user.dataset_name = filename
         db_sess.commit()
+
         # Возвращаем информацию о загруженном файле
         return jsonify({
             'message': 'Файл успешно загружен',
