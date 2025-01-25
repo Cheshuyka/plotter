@@ -105,19 +105,41 @@ def generate_plot():
         yAxis = data.get('yAxis')
         graphType = data.get('graphType')  # Тип графика
 
+        # Получаем текущего пользователя и его датасет
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.id == current_user.id).first()
+
+        if not user or not user.dataset_name:
+            return jsonify({'error': 'Датасет пользователя не найден'}), 404
+
+        # Загружаем датасет пользователя
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], user.dataset_name)
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'Файл датасета не найден'}), 404
+
+        df = pd.read_csv(filepath)
+
+        # Проверяем, что указанные колонки существуют в датасете
+        if xAxis not in df.columns or yAxis not in df.columns:
+            return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+
+        # Заменяем NaN на None (null в JSON)
+        df[xAxis] = df[xAxis].replace({np.nan: None})
+        df[yAxis] = df[yAxis].replace({np.nan: None})
+
         # Генерация данных в зависимости от типа графика
         if graphType == 'scatterplot':
             # Данные для scatterplot
             trace = go.Scatter(
-                x=[1, 2, 3, 4, 5],
-                y=[10, 11, 12, 13, 14],
+                x=df[xAxis].tolist(),  # Преобразуем в список
+                y=df[yAxis].tolist(),  # Преобразуем в список
                 mode='lines+markers',
                 name='Scatterplot'
             )
         elif graphType == 'boxplot':
             # Данные для boxplot
             trace = go.Box(
-                y=np.random.normal(0, 1, 100),  # Пример данных
+                y=df[yAxis].tolist(),  # Преобразуем в список
                 name='Boxplot'
             )
         else:
