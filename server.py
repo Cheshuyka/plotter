@@ -9,7 +9,6 @@ import numpy as np
 from flask import Flask, render_template, redirect, request, abort, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from data.users import User
-from Forms.forms import *
 
 
 app = Flask(__name__)
@@ -97,12 +96,11 @@ def main_page():
 
 
 @app.route('/generate_plot', methods=['POST'])
+@login_required
 def generate_plot():
     try:
         data = request.json
         title = data.get('title')
-        xAxis = data.get('xAxis')
-        yAxis = data.get('yAxis')
         graphType = data.get('graphType')  # Тип графика
 
         # Получаем текущего пользователя и его датасет
@@ -119,38 +117,146 @@ def generate_plot():
 
         df = pd.read_csv(filepath)
 
-        # Проверяем, что указанные колонки существуют в датасете
-        if xAxis not in df.columns or yAxis not in df.columns:
-            return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
-
-        # Заменяем NaN на None (null в JSON)
-        df[xAxis] = df[xAxis].replace({np.nan: None})
-        df[yAxis] = df[yAxis].replace({np.nan: None})
-
         # Генерация данных в зависимости от типа графика
-        if graphType == 'scatterplot':
-            # Данные для scatterplot
-            trace = go.Scatter(
-                x=df[xAxis].tolist(),  # Преобразуем в список
-                y=df[yAxis].tolist(),  # Преобразуем в список
-                mode='lines+markers',
-                name='Scatterplot'
+        if graphType == 'scatterplot' or graphType == 'lineplot':
+            xAxis = data.get('xAxis')
+            yAxis = data.get('yAxis')
+            color = data.get('color')
+            group = data.get('group')
+
+            # Проверяем, что указанные колонки существуют в датасете
+            if xAxis not in df.columns or yAxis not in df.columns:
+                return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+
+            # Заменяем NaN на None (null в JSON)
+            df[xAxis] = df[xAxis].replace({np.nan: None})
+            df[yAxis] = df[yAxis].replace({np.nan: None})
+
+            if graphType == 'scatterplot':
+                trace = go.Scatter(
+                    x=df[xAxis].tolist(),
+                    y=df[yAxis].tolist(),
+                    mode='markers',
+                    name=title,
+                    marker=dict(color=df[color].tolist() if color else None),
+                )
+            else:  # lineplot
+                trace = go.Scatter(
+                    x=df[xAxis].tolist(),
+                    y=df[yAxis].tolist(),
+                    mode='lines',
+                    name=title,
+                    line=dict(color=df[color].tolist() if color else None),
+                )
+
+            # Формируем макет графика с осями
+            layout = go.Layout(
+                title=title,
+                xaxis={'title': xAxis},
+                yaxis={'title': yAxis},
             )
-        elif graphType == 'boxplot':
-            # Данные для boxplot
-            trace = go.Box(
-                y=df[yAxis].tolist(),  # Преобразуем в список
-                name='Boxplot'
+
+        elif graphType == 'boxplot' or graphType == 'histogram':
+            values = data.get('values')
+            color = data.get('color')
+            group = data.get('group')
+
+            # Проверяем, что указанная колонка существует в датасете
+            if values not in df.columns:
+                return jsonify({'error': 'Указанная колонка не найдена в датасете'}), 400
+
+            # Заменяем NaN на None (null в JSON)
+            df[values] = df[values].replace({np.nan: None})
+
+            if graphType == 'boxplot':
+                trace = go.Box(
+                    y=df[values].tolist(),
+                    name=title,
+                    marker=dict(color=df[color].tolist() if color else None),
+                )
+            else:  # histogram
+                trace = go.Histogram(
+                    x=df[values].tolist(),
+                    name=title,
+                    marker=dict(color=df[color].tolist() if color else None),
+                )
+
+            # Формируем макет графика с осью Y (для boxplot и histogram)
+            layout = go.Layout(
+                title=title,
+                yaxis={'title': values},
             )
+
+        elif graphType == 'piechart':
+            values = data.get('values')
+            try:
+                hole = float(data.get('hole')) if data.get('hole') else 0.0  # Если hole пустое, используем 0.0
+            except ValueError:
+                return jsonify({'error': 'Некорректное значение для параметра hole'}), 400
+            if not (0 <= hole <= 1):
+                return jsonify({'error': 'Параметр hole должен быть в диапазоне от 0 до 1'}), 400
+
+            # Проверяем, что указанная колонка существует в датасете
+            if values not in df.columns:
+                return jsonify({'error': 'Указанная колонка не найдена в датасете'}), 400
+
+            # Заменяем NaN на None (null в JSON)
+            df[values] = df[values].replace({np.nan: None})
+            value_counts = df[values].value_counts().reset_index()
+            value_counts.columns = ['value', 'count']
+
+            trace = go.Pie(
+                labels=value_counts['value'].tolist(),
+                values=value_counts['count'].tolist(),
+                name=title,
+                hole=hole,
+            )
+
+            # Формируем макет графика только с заголовком
+            layout = go.Layout(
+                title=title,
+            )
+
+        elif graphType == 'barchart':
+            values = data.get('values')
+            orientation = data.get('orientation', 'v')  # По умолчанию вертикальная ориентация
+
+            # Проверяем, что указанная колонка существует в датасете
+            if values not in df.columns:
+                return jsonify({'error': 'Указанная колонка не найдена в датасете'}), 400
+
+            # Заменяем NaN на None (null в JSON)
+            df[values] = df[values].replace({np.nan: None})
+
+            # Получаем уникальные значения и их количество
+            value_counts = df[values].value_counts().reset_index()
+            value_counts.columns = ['value', 'count']
+
+            if orientation == 'v':
+                # Вертикальная ориентация: x - уникальные значения, y - их количество
+                x_data = value_counts['value'].tolist()
+                y_data = value_counts['count'].tolist()
+            else:
+                # Горизонтальная ориентация: y - уникальные значения, x - их количество
+                x_data = value_counts['count'].tolist()
+                y_data = value_counts['value'].tolist()
+
+            trace = go.Bar(
+                x=x_data,
+                y=y_data,
+                name=title,
+                orientation=orientation,
+            )
+
+            # Формируем макет графика с осью X или Y в зависимости от ориентации
+            layout = go.Layout(
+                title=title,
+                xaxis={'title': 'Количество' if orientation == 'v' else 'Значения'},
+                yaxis={'title': 'Значения' if orientation == 'v' else 'Количество'},
+            )
+
         else:
             return jsonify({'error': 'Неизвестный тип графика'}), 400
-
-        # Формируем макет графика
-        layout = go.Layout(
-            title=title,
-            xaxis={'title': xAxis},
-            yaxis={'title': yAxis}
-        )
 
         # Преобразуем объекты Plotly в словари
         trace_dict = trace.to_plotly_json()

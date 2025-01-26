@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Построение графиков</title>
     <style>
-        /* General Styles */
+        /* Общие стили */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -13,7 +13,7 @@
             display: flex;
             height: 100vh;
             background-color: #f4f4f4;
-            overflow: hidden; /* Отключаем общий скролл страницы */
+            overflow: hidden;
         }
 
         /* Шапка с именем пользователя */
@@ -49,9 +49,9 @@
             color: white;
             padding: 20px;
             box-sizing: border-box;
-            overflow-y: auto; /* Включаем скролл для левой панели */
-            height: calc(100vh - 60px); /* Высота с учетом шапки */
-            margin-top: 60px; /* Отступ сверху для шапки */
+            overflow-y: auto;
+            height: calc(100vh - 60px);
+            margin-top: 60px;
         }
 
         .left-panel h2 {
@@ -81,9 +81,9 @@
             padding: 20px;
             background: white;
             box-sizing: border-box;
-            overflow-y: auto; /* Включаем скролл для правой панели */
-            height: calc(100vh - 60px); /* Высота с учетом шапки */
-            margin-top: 60px; /* Отступ сверху для шапки */
+            overflow-y: auto;
+            height: calc(100vh - 60px);
+            margin-top: 60px;
         }
 
         .graph-block {
@@ -166,7 +166,7 @@
         }
 
         .file-upload input[type="file"] {
-            display: none; /* Скрываем стандартный input */
+            display: none;
         }
 
         .file-upload label {
@@ -213,38 +213,38 @@
 
         /* Стили для контейнера таблицы */
         .table-container {
-            width: 100%; /* Ширина контейнера */
-            overflow-x: auto; /* Горизонтальная прокрутка */
-            margin-top: 20px; /* Отступ сверху */
-            border: 1px solid #ddd; /* Граница для визуального выделения */
-            border-radius: 5px; /* Скругление углов */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Тень для красоты */
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         /* Стили для таблицы */
         table {
-            width: 100%; /* Ширина таблицы */
-            border-collapse: collapse; /* Убираем двойные границы */
-            white-space: nowrap; /* Запрещаем перенос строк в ячейках */
+            width: 100%;
+            border-collapse: collapse;
+            white-space: nowrap;
         }
 
         th, td {
-            border: 1px solid #ddd; /* Границы ячеек */
-            padding: 8px; /* Отступы внутри ячеек */
-            text-align: left; /* Выравнивание текста по левому краю */
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
         }
 
         th {
-            background-color: #f2f2f2; /* Цвет фона заголовков */
-            font-weight: bold; /* Жирный шрифт для заголовков */
+            background-color: #f2f2f2;
+            font-weight: bold;
         }
 
         tr:nth-child(even) {
-            background-color: #f9f9f9; /* Чередующийся цвет фона строк */
+            background-color: #f9f9f9;
         }
 
         tr:hover {
-            background-color: #f1f1f1; /* Цвет фона при наведении */
+            background-color: #f1f1f1;
         }
 
         .upload-block label {
@@ -267,6 +267,42 @@
         .upload-block input[type="text"]::placeholder {
             color: #999;
         }
+
+        /* Стили для переключателя ориентации */
+        .orientation-switch {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .orientation-switch label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 12px;
+            background-color: #f1f1f1;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .orientation-switch label:hover {
+            background-color: #e1e1e1;
+        }
+
+        .orientation-switch input[type="radio"] {
+            display: none; /* Скрываем стандартные радиокнопки */
+        }
+
+        .orientation-switch input[type="radio"]:checked + span {
+            color: #2196F3;
+            font-weight: bold;
+        }
+
+        .orientation-switch span {
+            color: #333;
+            transition: color 0.3s ease;
+        }
     </style>
     <!-- Иконки Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -284,7 +320,11 @@
         <h2>Доступные графики</h2>
         <ul class="graph-list">
             <li data-type="scatterplot" draggable="true">Scatterplot</li>
+            <li data-type="lineplot" draggable="true">Lineplot</li>
             <li data-type="boxplot" draggable="true">Boxplot</li>
+            <li data-type="histogram" draggable="true">Histogram</li>
+            <li data-type="piechart" draggable="true">Pie Chart</li>
+            <li data-type="barchart" draggable="true">Bar Chart</li>
         </ul>
     </div>
 
@@ -326,32 +366,64 @@
                 <h3>${type}</h3>
                 <label for="title">Название графика:</label>
                 <input type="text" class="title" placeholder="Введите название">
-                <label for="xAxis">Ось X:</label>
-                <input type="text" class="xAxis" placeholder="Введите название колонки для оси X">
-                <label for="yAxis">Ось Y:</label>
-                <input type="text" class="yAxis" placeholder="Введите название колонки для оси Y">
-                <button class="toggle-fields">Дополнительные поля</button>
-                <div class="additional-fields">
             `;
 
-            // Дополнительные поля для Scatterplot
-            if (type === 'scatterplot') {
+            // Основные и дополнительные поля в зависимости от типа графика
+            if (type === 'scatterplot' || type === 'lineplot') {
                 fields += `
-                    <label for="color">Цвет (опционально):</label>
-                    <input type="text" class="color" placeholder="Введите название колонки для цвета">
+                    <label for="xAxis">Ось X:</label>
+                    <input type="text" class="xAxis" placeholder="Введите название колонки для оси X">
+                    <label for="yAxis">Ось Y:</label>
+                    <input type="text" class="yAxis" placeholder="Введите название колонки для оси Y">
+                    <button class="toggle-fields">Дополнительные поля</button>
+                    <div class="additional-fields">
+                        <label for="color">Цвет (опционально):</label>
+                        <input type="text" class="color" placeholder="Введите название колонки для цвета">
+                        <label for="group">Группировка (опционально):</label>
+                        <input type="text" class="group" placeholder="Введите название колонки для группировки">
+                    </div>
                 `;
-            }
-
-            // Дополнительные поля для Boxplot
-            if (type === 'boxplot') {
+            } else if (type === 'boxplot' || type === 'histogram') {
                 fields += `
-                    <label for="hue">Hue (опционально):</label>
-                    <input type="text" class="hue" placeholder="Введите название колонки для hue">
+                    <label for="values">Значения:</label>
+                    <input type="text" class="values" placeholder="Введите название колонки для значений">
+                    <button class="toggle-fields">Дополнительные поля</button>
+                    <div class="additional-fields">
+                        <label for="color">Цвет (опционально):</label>
+                        <input type="text" class="color" placeholder="Введите название колонки для цвета">
+                        <label for="group">Группировка (опционально):</label>
+                        <input type="text" class="group" placeholder="Введите название колонки для группировки">
+                    </div>
                 `;
-            }
-
-            // Закрываем блок дополнительных полей
-            fields += `</div>`;
+            } else if (type === 'piechart') {
+                fields += `
+                    <label for="values">Значения для подсчета:</label>
+                    <input type="text" class="values" placeholder="Введите название колонки для значений">
+                    <button class="toggle-fields">Дополнительные поля</button>
+                    <div class="additional-fields">
+                        <label for="hole">Дыра (0-1):</label>
+                        <input type="number" class="hole" min="0" max="1" step="0.1" placeholder="Введите значение от 0 до 1">
+                    </div>
+                `;
+            } else if (type === 'barchart') {
+                fields += `
+                <label for="values">Значения для подсчета:</label>
+                <input type="text" class="values" placeholder="Введите название колонки для значений">
+                <button class="toggle-fields">Дополнительные поля</button>
+                <div class="additional-fields">
+                    <label>Ориентация:</label>
+                        <div class="orientation-switch">
+                    <label>
+                        <input type="radio" name="orientation" value="v" checked>
+                        <span>Вертикальная</span>
+                    </label>
+                    <label>
+                        <input type="radio" name="orientation" value="h">
+                        <span>Горизонтальная</span>
+                    </label>
+                </div>
+            </div>
+    `;}
 
             // Кнопки
             fields += `
@@ -371,55 +443,84 @@
 
             // Обработчик для кнопки "Построить график"
             block.querySelector('.plot').addEventListener('click', async () => {
-            const title = block.querySelector('.title').value;
-            const xAxis = block.querySelector('.xAxis').value;
-            const yAxis = block.querySelector('.yAxis').value;
-            const graphType = type; // Тип графика (scatterplot, boxplot и т.д.)
+                const title = block.querySelector('.title').value;
+                const graphType = type;
 
-            if (!title || !xAxis || !yAxis) {
-                alert('Заполните все обязательные поля!');
-                return;
-            }
+                // Собираем основные и дополнительные параметры
+                const params = {
+                    title: title,
+                    graphType: graphType,
+                };
 
-            // Проверяем, существует ли уже график
-            let graphContainer = block.querySelector('.plotly-graph');
-            if (graphContainer) {
-                graphContainer.remove(); // Удаляем старый график
-            }
-
-            // Создаем новый контейнер для графика
-            graphContainer = document.createElement('div');
-            graphContainer.className = 'plotly-graph';
-            block.appendChild(graphContainer);
-
-            // Отправляем данные на сервер
-            try {
-                const response = await fetch('/generate_plot', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        title: title,
-                        xAxis: xAxis,
-                        yAxis: yAxis,
-                        graphType: graphType, // Передаем тип графика
-                    }),
-                });
-
-                const result = await response.json(); // Парсим JSON
-
-                if (response.ok) {
-                    // Строим график с использованием Plotly
-                    Plotly.newPlot(graphContainer, result.data, result.layout);
-                } else {
-                    alert(result.error || 'Ошибка при построении графика');
+                if (type === 'scatterplot' || type === 'lineplot') {
+                    params.xAxis = block.querySelector('.xAxis').value;
+                    params.yAxis = block.querySelector('.yAxis').value;
+                    params.color = block.querySelector('.color').value;
+                    params.group = block.querySelector('.group').value;
+                } else if (type === 'boxplot' || type === 'histogram') {
+                    params.values = block.querySelector('.values').value;
+                    params.color = block.querySelector('.color').value;
+                    params.group = block.querySelector('.group').value;
+                } else if (type === 'piechart') {
+                    params.values = block.querySelector('.values').value;
+                    params.hole = block.querySelector('.hole').value;
+                } else if (type === 'barchart') {
+                    params.values = block.querySelector('.values').value;
+                    params.orientation = block.querySelector('input[name="orientation"]:checked').value;
                 }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Произошла ошибка при отправке данных');
-            }
-        });
+
+                // Проверяем обязательные поля
+                if (!title) {
+                    alert('Заполните название графика!');
+                    return;
+                }
+
+                if (type === 'scatterplot' || type === 'lineplot') {
+                    if (!params.xAxis || !params.yAxis) {
+                        alert('Заполните оси X и Y!');
+                        return;
+                    }
+                } else if (type === 'boxplot' || type === 'histogram' || type === 'piechart' || type === 'barchart') {
+                    if (!params.values) {
+                        alert('Заполните поле "Значения"!');
+                        return;
+                    }
+                }
+
+                // Проверяем, существует ли уже график
+                let graphContainer = block.querySelector('.plotly-graph');
+                if (graphContainer) {
+                    graphContainer.remove(); // Удаляем старый график
+                }
+
+                // Создаем новый контейнер для графика
+                graphContainer = document.createElement('div');
+                graphContainer.className = 'plotly-graph';
+                block.appendChild(graphContainer);
+
+                // Отправляем данные на сервер
+                try {
+                    const response = await fetch('/generate_plot', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(params),
+                    });
+
+                    const result = await response.json(); // Парсим JSON
+
+                    if (response.ok) {
+                        // Строим график с использованием Plotly
+                        Plotly.newPlot(graphContainer, result.data, result.layout);
+                    } else {
+                        alert(result.error || 'Ошибка при построении графика');
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Произошла ошибка при отправке данных');
+                }
+            });
 
             // Обработчик для кнопки "Удалить"
             block.querySelector('.delete').addEventListener('click', () => {
@@ -469,106 +570,105 @@
             }
         });
 
-
-    function displayFirstRows(filename) {
-    // Проверяем, есть ли уже таблица на странице
-    const existingTableContainer = document.querySelector('#rightPanel .table-container');
-    if (existingTableContainer) {
-        existingTableContainer.remove(); // Удаляем существующую таблицу
-    }
-
-    fetch(`/get_first_rows?filename=${filename}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert(data.error);
+        uploadButton.addEventListener('click', async () => {
+            const file = datasetUpload.files[0];
+            if (!file) {
+                alert('Выберите файл для загрузки!');
                 return;
             }
 
-            // Парсим JSON-строку
-            const rows = JSON.parse(data.data);
+            // Получаем значения из полей ввода
+            const delimiter = document.getElementById('delimiter').value || ',';
+            const decimal = document.getElementById('decimal').value || '.';
 
-            // Создаем контейнер для таблицы
-            const tableContainer = document.createElement('div');
-            tableContainer.className = 'table-container';
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('delimiter', delimiter); // Добавляем сепаратор
+            formData.append('decimal', decimal);     // Добавляем разделитель десятичных
 
-            // Создаем таблицу
-            const table = document.createElement('table');
-
-            // Создаем заголовок таблицы
-            const thead = document.createElement('thead');
-            const headerRow = document.createElement('tr');
-            Object.keys(rows[0]).forEach(key => {
-                const th = document.createElement('th');
-                th.textContent = key;
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-            table.appendChild(thead);
-
-            // Создаем тело таблицы
-            const tbody = document.createElement('tbody');
-            rows.forEach(row => {
-                const tr = document.createElement('tr');
-                Object.values(row).forEach(value => {
-                    const td = document.createElement('td');
-                    td.textContent = value === null ? 'null' : value; // Заменяем null на 'null'
-                    tr.appendChild(td);
+            try {
+                statusDiv.textContent = 'Загрузка файла...';
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,  // Отправляем FormData
                 });
-                tbody.appendChild(tr);
-            });
-            table.appendChild(tbody);
 
-            // Добавляем таблицу в контейнер
-            tableContainer.appendChild(table);
+                const result = await response.json();
 
-            // Добавляем контейнер в правую панель
-            const rightPanel = document.getElementById('rightPanel');
-            rightPanel.insertBefore(tableContainer, rightPanel.firstChild);
-        })
-        .catch(error => {
-            console.error('Ошибка:', error);
-            alert('Произошла ошибка при загрузке данных');
-        });
-}
-
-        uploadButton.addEventListener('click', async () => {
-    const file = datasetUpload.files[0];
-    if (!file) {
-        alert('Выберите файл для загрузки!');
-        return;
-    }
-
-    // Получаем значения из полей ввода
-    const delimiter = document.getElementById('delimiter').value || ',';
-    const decimal = document.getElementById('decimal').value || '.';
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('delimiter', delimiter); // Добавляем сепаратор
-    formData.append('decimal', decimal);     // Добавляем разделитель десятичных
-
-    try {
-        statusDiv.textContent = 'Загрузка файла...';
-        const response = await fetch('/upload', {
-            method: 'POST',
-            body: formData,  // Отправляем FormData
+                if (response.ok) {
+                    statusDiv.textContent = `Файл "${result.filename}" успешно загружен.`;
+                    // После успешной загрузки запрашиваем первые 5 строк
+                    displayFirstRows(result.filename);
+                } else {
+                    statusDiv.textContent = result.error || 'Ошибка при загрузке файла';
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                statusDiv.textContent = 'Произошла ошибка при отправке файла';
+            }
         });
 
-        const result = await response.json();
+        function displayFirstRows(filename) {
+            // Проверяем, есть ли уже таблица на странице
+            const existingTableContainer = document.querySelector('#rightPanel .table-container');
+            if (existingTableContainer) {
+                existingTableContainer.remove(); // Удаляем существующую таблицу
+            }
 
-        if (response.ok) {
-            statusDiv.textContent = `Файл "${result.filename}" успешно загружен.`;
-            // После успешной загрузки запрашиваем первые 5 строк
-            displayFirstRows(result.filename);
-        } else {
-            statusDiv.textContent = result.error || 'Ошибка при загрузке файла';
+            fetch(`/get_first_rows?filename=${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                        return;
+                    }
+
+                    // Парсим JSON-строку
+                    const rows = JSON.parse(data.data);
+
+                    // Создаем контейнер для таблицы
+                    const tableContainer = document.createElement('div');
+                    tableContainer.className = 'table-container';
+
+                    // Создаем таблицу
+                    const table = document.createElement('table');
+
+                    // Создаем заголовок таблицы
+                    const thead = document.createElement('thead');
+                    const headerRow = document.createElement('tr');
+                    Object.keys(rows[0]).forEach(key => {
+                        const th = document.createElement('th');
+                        th.textContent = key;
+                        headerRow.appendChild(th);
+                    });
+                    thead.appendChild(headerRow);
+                    table.appendChild(thead);
+
+                    // Создаем тело таблицы
+                    const tbody = document.createElement('tbody');
+                    rows.forEach(row => {
+                        const tr = document.createElement('tr');
+                        Object.values(row).forEach(value => {
+                            const td = document.createElement('td');
+                            td.textContent = value === null ? 'null' : value; // Заменяем null на 'null'
+                            tr.appendChild(td);
+                        });
+                        tbody.appendChild(tr);
+                    });
+                    table.appendChild(tbody);
+
+                    // Добавляем таблицу в контейнер
+                    tableContainer.appendChild(table);
+
+                    // Добавляем контейнер в правую панель
+                    const rightPanel = document.getElementById('rightPanel');
+                    rightPanel.insertBefore(tableContainer, rightPanel.firstChild);
+                })
+                .catch(error => {
+                    console.error('Ошибка:', error);
+                    alert('Произошла ошибка при загрузке данных');
+                });
         }
-    } catch (error) {
-        console.error('Ошибка:', error);
-        statusDiv.textContent = 'Произошла ошибка при отправке файла';
-    }
-});
     </script>
 </body>
 </html>
