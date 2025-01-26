@@ -122,7 +122,7 @@ def generate_plot():
             xAxis = data.get('xAxis')
             yAxis = data.get('yAxis')
             color = data.get('color')
-            group = data.get('group')
+            group = data.get('group')  # Колонка для группировки
 
             # Проверяем, что указанные колонки существуют в датасете
             if xAxis not in df.columns or yAxis not in df.columns:
@@ -132,22 +132,45 @@ def generate_plot():
             df[xAxis] = df[xAxis].replace({np.nan: None})
             df[yAxis] = df[yAxis].replace({np.nan: None})
 
-            if graphType == 'scatterplot':
-                trace = go.Scatter(
-                    x=df[xAxis].tolist(),
-                    y=df[yAxis].tolist(),
-                    mode='markers',
-                    name=title,
-                    marker=dict(color=df[color].tolist() if color else None),
-                )
-            else:  # lineplot
-                trace = go.Scatter(
-                    x=df[xAxis].tolist(),
-                    y=df[yAxis].tolist(),
-                    mode='lines',
-                    name=title,
-                    line=dict(color=df[color].tolist() if color else None),
-                )
+            traces = []
+            if group and group in df.columns:  # Если указана группировка
+                grouped = df.groupby(group)
+                for name, group_data in grouped:
+                    if graphType == 'scatterplot':
+                        trace = go.Scatter(
+                            x=group_data[xAxis].tolist(),
+                            y=group_data[yAxis].tolist(),
+                            mode='markers',
+                            name=str(name),  # Название группы
+                            marker=dict(color=group_data[color].tolist() if color else None),
+                        )
+                    else:  # lineplot
+                        trace = go.Scatter(
+                            x=group_data[xAxis].tolist(),
+                            y=group_data[yAxis].tolist(),
+                            mode='lines',
+                            name=str(name),  # Название группы
+                            line=dict(color=group_data[color].tolist() if color else None),
+                        )
+                    traces.append(trace)
+            else:  # Если группировка не указана
+                if graphType == 'scatterplot':
+                    trace = go.Scatter(
+                        x=df[xAxis].tolist(),
+                        y=df[yAxis].tolist(),
+                        mode='markers',
+                        name=title,
+                        marker=dict(color=df[color].tolist() if color else None),
+                    )
+                else:  # lineplot
+                    trace = go.Scatter(
+                        x=df[xAxis].tolist(),
+                        y=df[yAxis].tolist(),
+                        mode='lines',
+                        name=title,
+                        line=dict(color=df[color].tolist() if color else None),
+                    )
+                traces.append(trace)
 
             # Формируем макет графика с осями
             layout = go.Layout(
@@ -159,7 +182,7 @@ def generate_plot():
         elif graphType == 'boxplot' or graphType == 'histogram':
             values = data.get('values')
             color = data.get('color')
-            group = data.get('group')
+            group = data.get('group')  # Колонка для группировки
 
             # Проверяем, что указанная колонка существует в датасете
             if values not in df.columns:
@@ -168,18 +191,37 @@ def generate_plot():
             # Заменяем NaN на None (null в JSON)
             df[values] = df[values].replace({np.nan: None})
 
-            if graphType == 'boxplot':
-                trace = go.Box(
-                    y=df[values].tolist(),
-                    name=title,
-                    marker=dict(color=df[color].tolist() if color else None),
-                )
-            else:  # histogram
-                trace = go.Histogram(
-                    x=df[values].tolist(),
-                    name=title,
-                    marker=dict(color=df[color].tolist() if color else None),
-                )
+            traces = []
+            if group and group in df.columns:  # Если указана группировка
+                grouped = df.groupby(group)
+                for name, group_data in grouped:
+                    if graphType == 'boxplot':
+                        trace = go.Box(
+                            y=group_data[values].tolist(),
+                            name=str(name),  # Название группы
+                            marker=dict(color=group_data[color].tolist() if color else None),
+                        )
+                    else:  # histogram
+                        trace = go.Histogram(
+                            x=group_data[values].tolist(),
+                            name=str(name),  # Название группы
+                            marker=dict(color=group_data[color].tolist() if color else None),
+                        )
+                    traces.append(trace)
+            else:  # Если группировка не указана
+                if graphType == 'boxplot':
+                    trace = go.Box(
+                        y=df[values].tolist(),
+                        name=title,
+                        marker=dict(color=df[color].tolist() if color else None),
+                    )
+                else:  # histogram
+                    trace = go.Histogram(
+                        x=df[values].tolist(),
+                        name=title,
+                        marker=dict(color=df[color].tolist() if color else None),
+                    )
+                traces.append(trace)
 
             # Формируем макет графика с осью Y (для boxplot и histogram)
             layout = go.Layout(
@@ -216,10 +258,12 @@ def generate_plot():
             layout = go.Layout(
                 title=title,
             )
+            traces = [trace]
 
         elif graphType == 'barchart':
             values = data.get('values')
             orientation = data.get('orientation', 'v')  # По умолчанию вертикальная ориентация
+            group = data.get('group')  # Колонка для группировки
 
             # Проверяем, что указанная колонка существует в датасете
             if values not in df.columns:
@@ -228,25 +272,47 @@ def generate_plot():
             # Заменяем NaN на None (null в JSON)
             df[values] = df[values].replace({np.nan: None})
 
-            # Получаем уникальные значения и их количество
-            value_counts = df[values].value_counts().reset_index()
-            value_counts.columns = ['value', 'count']
+            traces = []
+            if group and group in df.columns:  # Если указана группировка
+                grouped = df.groupby(group)
+                for name, group_data in grouped:
+                    value_counts = group_data[values].value_counts().reset_index()
+                    value_counts.columns = ['value', 'count']
 
-            if orientation == 'v':
-                # Вертикальная ориентация: x - уникальные значения, y - их количество
-                x_data = value_counts['value'].tolist()
-                y_data = value_counts['count'].tolist()
-            else:
-                # Горизонтальная ориентация: y - уникальные значения, x - их количество
-                x_data = value_counts['count'].tolist()
-                y_data = value_counts['value'].tolist()
+                    if orientation == 'v':
+                        # Вертикальная ориентация: x - уникальные значения, y - их количество
+                        x_data = value_counts['value'].tolist()
+                        y_data = value_counts['count'].tolist()
+                    else:
+                        # Горизонтальная ориентация: y - уникальные значения, x - их количество
+                        x_data = value_counts['count'].tolist()
+                        y_data = value_counts['value'].tolist()
 
-            trace = go.Bar(
-                x=x_data,
-                y=y_data,
-                name=title,
-                orientation=orientation,
-            )
+                    trace = go.Bar(
+                        x=x_data,
+                        y=y_data,
+                        name=str(name),  # Название группы
+                        orientation=orientation,
+                    )
+                    traces.append(trace)
+            else:  # Если группировка не указана
+                value_counts = df[values].value_counts().reset_index()
+                value_counts.columns = ['value', 'count']
+
+                if orientation == 'v':
+                    x_data = value_counts['value'].tolist()
+                    y_data = value_counts['count'].tolist()
+                else:
+                    x_data = value_counts['count'].tolist()
+                    y_data = value_counts['value'].tolist()
+
+                trace = go.Bar(
+                    x=x_data,
+                    y=y_data,
+                    name=title,
+                    orientation=orientation,
+                )
+                traces.append(trace)
 
             # Формируем макет графика с осью X или Y в зависимости от ориентации
             layout = go.Layout(
@@ -259,12 +325,12 @@ def generate_plot():
             return jsonify({'error': 'Неизвестный тип графика'}), 400
 
         # Преобразуем объекты Plotly в словари
-        trace_dict = trace.to_plotly_json()
+        traces_dict = [trace.to_plotly_json() for trace in traces]
         layout_dict = layout.to_plotly_json()
 
         # Возвращаем JSON для Plotly
         return jsonify({
-            'data': [trace_dict],  # Данные для графика
+            'data': traces_dict,  # Данные для графика
             'layout': layout_dict  # Макет графика
         })
     except Exception as e:

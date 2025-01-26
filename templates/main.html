@@ -173,18 +173,19 @@
             display: inline-block;
             padding: 10px 20px;
             background-color: #4CAF50;
-            color: white;
+            color: white !important; /* Принудительно белый текст */
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
 
-        .file-upload label:hover {
-            background-color: #45a049;
-        }
-
         .file-upload label i {
             margin-right: 8px;
+            color: white !important; /* Белая иконка */
+        }
+
+        .file-upload label:hover {
+            background-color: #45a049;
         }
 
         .upload-button {
@@ -199,10 +200,12 @@
 
         .upload-button:hover {
             background-color: #1e88e5;
+            color: white
         }
 
         .upload-button i {
             margin-right: 8px;
+            color: white
         }
 
         .file-name {
