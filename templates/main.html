@@ -306,6 +306,84 @@
             color: #333;
             transition: color 0.3s ease;
         }
+
+        /* Стили для блоков критериев */
+        .criteria-block {
+            border: 1px solid #ccc;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        .criteria-block h3 {
+            margin-top: 0;
+        }
+
+        .criteria-block label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold;
+        }
+
+        .criteria-block input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .criteria-block button {
+            padding: 8px 12px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #2196F3;
+            color: white;
+        }
+
+        .criteria-block button:hover {
+            opacity: 0.9;
+        }
+
+        .criteria-result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #e9e9e9;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .criteria-block button.delete {
+            background-color: #f44336; /* Красный цвет */
+            color: white;
+            margin-left: 10px; /* Отступ от кнопки "Провести тест" */
+        }
+
+        .criteria-block button.delete:hover {
+            opacity: 0.9;
+        }
+
+        .criteria-list li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #444; /* Цвет фона */
+            cursor: grab;
+            border-radius: 5px; /* Скругленные углы */
+            color: white; /* Белый текст */
+            border: 1px solid #555; /* Рамка */
+        }
+
+        .criteria-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .criteria-list li:active {
+            cursor: grabbing;
+        }
     </style>
     <!-- Иконки Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -328,6 +406,12 @@
             <li data-type="histogram" draggable="true">Histogram</li>
             <li data-type="piechart" draggable="true">Pie Chart</li>
             <li data-type="barchart" draggable="true">Bar Chart</li>
+        </ul>
+        <h2>Статистические критерии</h2>
+        <ul class="criteria-list">
+            <li data-type="t-test" draggable="true">t-test Стьюдента</li>
+            <li data-type="mann-whitney" draggable="true">U-критерий Манна-Уитни</li>
+            <li data-type="shapiro-wilk" draggable="true">Тест Шапиро-Уилка</li>
         </ul>
     </div>
 
@@ -439,10 +523,15 @@
             // Обработчик для кнопки "Дополнительные поля"
             const toggleButton = block.querySelector('.toggle-fields');
             const additionalFields = block.querySelector('.additional-fields');
-            toggleButton.addEventListener('click', () => {
-                const currentDisplay = window.getComputedStyle(additionalFields).display;
-                additionalFields.style.display = currentDisplay === 'none' ? 'block' : 'none';
-            });
+
+            if (toggleButton && additionalFields) {
+                toggleButton.addEventListener('click', () => {
+                    const currentDisplay = window.getComputedStyle(additionalFields).display;
+                    additionalFields.style.display = currentDisplay === 'none' ? 'block' : 'none';
+                });
+            } else {
+                console.error('Элемент .toggle-fields или .additional-fields не найден');
+            }
 
             // Обработчик для кнопки "Построить график"
             block.querySelector('.plot').addEventListener('click', async () => {
@@ -547,12 +636,21 @@
             event.preventDefault();
         });
 
-        // Обработка события "drop"
+        // Обработчик для события "drop"
         rightPanel.addEventListener('drop', (event) => {
             event.preventDefault();
             const type = event.dataTransfer.getData('text/plain');
-            const block = createGraphBlock(type);
-            rightPanel.appendChild(block);
+
+            // Определяем, что перетаскивается: график или статистический тест
+            if (type === 't-test Стьюдента' || type === 'U-критерий Манна-Уитни' || type === 'Тест Шапиро-Уилка') {
+                // Создаем блок для статистического теста
+                const block = createCriteriaBlock(type);
+                rightPanel.appendChild(block);
+            } else {
+                // Создаем блок для графика
+                const block = createGraphBlock(type);
+                rightPanel.appendChild(block);
+            }
         });
 
         // Загрузка датасета на сервер
@@ -672,6 +770,102 @@
                     alert('Произошла ошибка при загрузке данных');
                 });
         }
+
+        // Функция для создания блока с параметрами критерия
+        function createCriteriaBlock(type) {
+            const block = document.createElement('div');
+            block.className = 'criteria-block';
+
+            let fields = `<h3>${type}</h3>`;
+
+            // Поля в зависимости от типа критерия
+            if (type === 't-test Стьюдента') {
+                fields += `
+                    <label for="values">Значения:</label>
+                    <input type="text" class="values" placeholder="Введите название колонки для значений">
+                    <label for="group">Группировка:</label>
+                    <input type="text" class="group" placeholder="Введите название колонки для группировки">
+                `;
+            } else if (type === 'U-критерий Манна-Уитни') {
+                fields += `
+                    <label for="values">Значения:</label>
+                    <input type="text" class="values" placeholder="Введите название колонки для значений">
+                    <label for="group">Группировка:</label>
+                    <input type="text" class="group" placeholder="Введите название колонки для группировки">
+                `;
+            } else if (type === 'Тест Шапиро-Уилка') {
+                fields += `
+                    <label for="values">Значения:</label>
+                    <input type="text" class="values" placeholder="Введите название колонки для значений">
+                `;
+            }
+
+            // Кнопки "Провести тест" и "Удалить"
+            fields += `
+                <button class="run-test">Провести тест</button>
+                <button class="delete">Удалить</button>
+            `;
+
+            // Контейнер для результата
+            fields += `<div class="criteria-result"></div>`;
+
+            block.innerHTML = fields;
+
+            // Обработчик для кнопки "Провести тест"
+            block.querySelector('.run-test').addEventListener('click', async () => {
+                const values = block.querySelector('.values').value;
+                const group = block.querySelector('.group') ? block.querySelector('.group').value : null;
+
+                // Проверка заполнения полей
+                if (!values || (type !== 'Тест Шапиро-Уилка' && !group)) {
+                    alert('Заполните все поля!');
+                    return;
+                }
+
+                // Параметры для отправки на сервер
+                const params = {
+                    type: type,
+                    values: values,
+                    group: group,
+                };
+
+                try {
+                    const response = await fetch('/run_test', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(params),
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        // Выводим результат теста
+                        const resultDiv = block.querySelector('.criteria-result');
+                        resultDiv.textContent = JSON.stringify(result, null, 2);
+                    } else {
+                        alert(result.error || 'Ошибка при проведении теста');
+                    }
+                } catch (error) {
+                    console.error('Ошибка:', error);
+                    alert('Произошла ошибка при отправке данных');
+                }
+            });
+
+            // Обработчик для кнопки "Удалить"
+            block.querySelector('.delete').addEventListener('click', () => {
+                block.remove(); // Удаляем блок
+            });
+
+            return block;
+        }
+
+        // Обработка перетаскивания критериев
+        const criteriaList = document.querySelector('.criteria-list');
+        criteriaList.addEventListener('dragstart', (event) => {
+            event.dataTransfer.setData('text/plain', event.target.textContent);
+        });
     </script>
 </body>
 </html>

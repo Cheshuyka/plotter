@@ -9,7 +9,7 @@ import numpy as np
 from flask import Flask, render_template, redirect, request, abort, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from data.users import User
-
+from scipy import stats
 
 app = Flask(__name__)
 
@@ -335,6 +335,96 @@ def generate_plot():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500  # Возвращаем ошибку в формате JSON
+
+
+@app.route('/run_test', methods=['POST'])
+def run_test():
+    try:
+        # Получаем текущего пользователя и его датасет
+        db_sess = db_session.create_session()
+        user = db_sess.query(User).filter(User.id == current_user.id).first()
+
+        if not user or not user.dataset_name:
+            return jsonify({'error': 'Датасет пользователя не найден'}), 404
+
+        # Загружаем датасет пользователя
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], user.dataset_name)
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'Файл датасета не найден'}), 404
+
+        df = pd.read_csv(filepath)
+        data = request.get_json()
+        test_type = data.get('type')
+
+        if test_type == "t-test Стьюдента":
+            values_column = data.get('values')
+            group_column = data.get('group')
+            if values_column not in df.columns or group_column not in df.columns:
+                return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+            # Проверка на две группы
+            df1 = df.dropna(subset=[values_column, group_column])
+            groups = df1[group_column].unique()
+            if len(groups) != 2:
+                return jsonify({"error": "t-test требует ровно две группы"}), 400
+
+            group1 = df1[df1[group_column] == groups[0]][values_column]
+            group2 = df1[df1[group_column] == groups[1]][values_column]
+
+            # Проведение t-теста
+            t_stat, p_value = stats.ttest_ind(group1, group2)
+            result = {
+                "test": "t-test Стьюдента",
+                "t_statistic": t_stat,
+                "p_value": p_value,
+                "result": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
+                "null_hypothesis": "Средние значения двух групп равны" if p_value >= 0.05 else "Средние значения двух групп не равны"
+            }
+
+        elif test_type == "U-критерий Манна-Уитни":
+            values_column = data.get('values')
+            group_column = data.get('group')
+            if values_column not in df.columns or group_column not in df.columns:
+                return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+            df1 = df.dropna(subset=[values_column, group_column])
+            # Проверка на две группы
+            groups = df1[group_column].unique()
+            if len(groups) != 2:
+                return jsonify({"error": "U-критерий требует ровно две группы"}), 400
+
+            group1 = df1[df1[group_column] == groups[0]][values_column]
+            group2 = df1[df1[group_column] == groups[1]][values_column]
+
+            # Проведение U-теста
+            u_stat, p_value = stats.mannwhitneyu(group1, group2, alternative='two-sided')
+            result = {
+                "test": "U-критерий Манна-Уитни",
+                "u_statistic": u_stat,
+                "p_value": p_value,
+                "result": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
+                "null_hypothesis": "Распределения двух групп одинаковы" if p_value >= 0.05 else "Распределения двух групп не одинаковы"
+            }
+
+        elif test_type == "Тест Шапиро-Уилка":
+            values_column = data.get('values')
+            if values_column not in df.columns:
+                return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+            df1 = df.dropna(subset=[values_column])
+            # Проведение теста Шапиро-Уилка
+            w_stat, p_value = stats.shapiro(df1[values_column])
+            result = {
+                "test": "Тест Шапиро-Уилка",
+                "w_statistic": w_stat,
+                "p_value": p_value,
+                "result": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
+                "null_hypothesis": "Данные имеют нормальное распределение" if p_value >= 0.05 else 'Данные имеют ненормальное распределение'
+            }
+        else:
+            return jsonify({"error": "Неизвестный тип теста"}), 400
+        return jsonify(result)
+    except KeyError as e:
+        return jsonify({"error": f"Колонка {str(e)} не найдена в датасете"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route('/upload', methods=['POST'])
