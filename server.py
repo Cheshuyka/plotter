@@ -83,7 +83,7 @@ def login():
         return jsonify({"message": "Неправильный логин или пароль!"}), 401
 
 
-@app.route('/logout')  # выход пользователя (flask_login) ЕЩЕ НЕТ КНОПКИ ДЛЯ ВЫХОДА
+@app.route('/logout')
 @login_required
 def logout():
     logout_user()
@@ -92,7 +92,7 @@ def logout():
 
 @app.route('/main', methods=['GET'])
 def main_page():
-    return render_template('main.html')
+    return render_template('main.html', name=current_user.name)
 
 
 @app.route('/generate_plot', methods=['POST'])
