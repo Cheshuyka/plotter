@@ -1,15 +1,16 @@
-from data import db_session
-import pandas as pd
-from datetime import datetime
-from werkzeug.utils import secure_filename
 import os
-import plotly.graph_objs as go
-import plotly.io as pio
+from datetime import datetime
+
 import numpy as np
-from flask import Flask, render_template, redirect, request, abort, jsonify
+import pandas as pd
+import plotly.graph_objs as go
+from flask import Flask, render_template, redirect, request, jsonify
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from data.users import User
 from scipy import stats
+from werkzeug.utils import secure_filename
+
+from data import db_session
+from data.users import User
 
 app = Flask(__name__)
 
