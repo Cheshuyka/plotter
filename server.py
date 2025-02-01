@@ -559,4 +559,4 @@ def get_first_rows():
 
 if __name__ == '__main__':
     db_session.global_init('db/plotter.db')
-    app.run()
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
