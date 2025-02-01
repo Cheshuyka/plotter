@@ -122,7 +122,6 @@ def generate_plot():
         if graphType == 'scatterplot' or graphType == 'lineplot':
             xAxis = data.get('xAxis')
             yAxis = data.get('yAxis')
-            color = data.get('color')
             group = data.get('group')  # Колонка для группировки
 
             # Проверяем, что указанные колонки существуют в датасете
@@ -143,7 +142,6 @@ def generate_plot():
                             y=group_data[yAxis].tolist(),
                             mode='markers',
                             name=str(name),  # Название группы
-                            marker=dict(color=group_data[color].tolist() if color else None),
                         )
                     else:  # lineplot
                         trace = go.Scatter(
@@ -151,7 +149,6 @@ def generate_plot():
                             y=group_data[yAxis].tolist(),
                             mode='lines',
                             name=str(name),  # Название группы
-                            line=dict(color=group_data[color].tolist() if color else None),
                         )
                     traces.append(trace)
             else:  # Если группировка не указана
@@ -161,7 +158,6 @@ def generate_plot():
                         y=df[yAxis].tolist(),
                         mode='markers',
                         name=title,
-                        marker=dict(color=df[color].tolist() if color else None),
                     )
                 else:  # lineplot
                     trace = go.Scatter(
@@ -169,7 +165,6 @@ def generate_plot():
                         y=df[yAxis].tolist(),
                         mode='lines',
                         name=title,
-                        line=dict(color=df[color].tolist() if color else None),
                     )
                 traces.append(trace)
 
@@ -182,7 +177,6 @@ def generate_plot():
 
         elif graphType == 'boxplot' or graphType == 'histogram':
             values = data.get('values')
-            color = data.get('color')
             group = data.get('group')  # Колонка для группировки
 
             # Проверяем, что указанная колонка существует в датасете
@@ -200,13 +194,11 @@ def generate_plot():
                         trace = go.Box(
                             y=group_data[values].tolist(),
                             name=str(name),  # Название группы
-                            marker=dict(color=group_data[color].tolist() if color else None),
                         )
                     else:  # histogram
                         trace = go.Histogram(
                             x=group_data[values].tolist(),
                             name=str(name),  # Название группы
-                            marker=dict(color=group_data[color].tolist() if color else None),
                         )
                     traces.append(trace)
             else:  # Если группировка не указана
@@ -214,13 +206,11 @@ def generate_plot():
                     trace = go.Box(
                         y=df[values].tolist(),
                         name=title,
-                        marker=dict(color=df[color].tolist() if color else None),
                     )
                 else:  # histogram
                     trace = go.Histogram(
                         x=df[values].tolist(),
                         name=title,
-                        marker=dict(color=df[color].tolist() if color else None),
                     )
                 traces.append(trace)
 
@@ -374,11 +364,10 @@ def run_test():
             # Проведение t-теста
             t_stat, p_value = stats.ttest_ind(group1, group2)
             result = {
-                "test": "t-test Стьюдента",
-                "t_statistic": t_stat,
+                "statistic": t_stat,
                 "p_value": p_value,
-                "result": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
-                "null_hypothesis": "Средние значения двух групп равны" if p_value >= 0.05 else "Средние значения двух групп не равны"
+                "null_hypothesis": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
+                "result": "Средние значения двух групп равны" if p_value >= 0.05 else "Средние значения двух групп не равны"
             }
 
         elif test_type == "U-критерий Манна-Уитни":
@@ -398,11 +387,10 @@ def run_test():
             # Проведение U-теста
             u_stat, p_value = stats.mannwhitneyu(group1, group2, alternative='two-sided')
             result = {
-                "test": "U-критерий Манна-Уитни",
-                "u_statistic": u_stat,
+                "statistic": u_stat,
                 "p_value": p_value,
-                "result": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
-                "null_hypothesis": "Распределения двух групп одинаковы" if p_value >= 0.05 else "Распределения двух групп не одинаковы"
+                "null_hypothesis": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
+                "result": "Распределения двух групп одинаковы" if p_value >= 0.05 else "Распределения двух групп не одинаковы"
             }
 
         elif test_type == "Тест Шапиро-Уилка":
@@ -413,11 +401,62 @@ def run_test():
             # Проведение теста Шапиро-Уилка
             w_stat, p_value = stats.shapiro(df1[values_column])
             result = {
-                "test": "Тест Шапиро-Уилка",
-                "w_statistic": w_stat,
+                "statistic": w_stat,
                 "p_value": p_value,
-                "result": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
-                "null_hypothesis": "Данные имеют нормальное распределение" if p_value >= 0.05 else 'Данные имеют ненормальное распределение'
+                "null_hypothesis": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
+                "result": "Данные имеют нормальное распределение" if p_value >= 0.05 else 'Данные имеют ненормальное распределение'
+            }
+        elif test_type == "Коэффициент корреляции Пирсона":
+            values_1 = data.get('values_1')
+            values_2 = data.get('values_2')
+            if values_1 not in df.columns or values_2 not in df.columns:
+                return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+            # Проверка на две группы
+            df1 = df.dropna(subset=[values_2, values_1])
+            # Проведение t-теста
+            stat, p_value = stats.pearsonr(df1[values_1], df1[values_2])
+            result = {
+                "statistic": stat,
+                "p_value": p_value,
+                "null_hypothesis": "Линейная взаимосвязь есть (но обратите внимание на коэффициент корреляции)" if p_value < 0.05 else "Линейной взаимосвязи не наблюдается (тем не менее, обратите внимание на коэффициент корреляции). p-value больше 0.05 может быть вызван размером выборки и другими факторами",
+                "result": f"Коэффициент корреляции {stat}"
+            }
+        elif test_type == "Коэффициент корреляции Спирмена":
+            values_1 = data.get('values_1')
+            values_2 = data.get('values_2')
+            if values_1 not in df.columns or values_2 not in df.columns:
+                return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+            # Проверка на две группы
+            df1 = df.dropna(subset=[values_2, values_1])
+            # Проведение t-теста
+            stat, p_value = stats.spearmanr(df1[values_1], df1[values_2])
+            result = {
+                "statistic": stat,
+                "p_value": p_value,
+                "null_hypothesis": "Линейная взаимосвязь есть (но обратите внимание на коэффициент корреляции)" if p_value < 0.05 else "Линейной взаимосвязи не наблюдается (тем не менее, обратите внимание на коэффициент корреляции). p-value больше 0.05 может быть вызван размером выборки и другими факторами",
+                "result": f"Коэффициент корреляции {stat}"
+            }
+        elif test_type == "ANOVA":
+            values_column = data.get('values')
+            group_column = data.get('group')
+            if values_column not in df.columns or group_column not in df.columns:
+                return jsonify({'error': 'Указанные колонки не найдены в датасете'}), 400
+            # Проверка на две группы
+            df1 = df.dropna(subset=[values_column, group_column])
+            groups = df1[group_column].unique()
+
+            g = []
+            for i in groups:
+                x = df1[df1[group_column] == i][values_column]
+                g.append(x)
+
+            # Проведение t-теста
+            stat, p_value = stats.f_oneway(*g)
+            result = {
+                "statistic": stat,
+                "p_value": p_value,
+                "null_hypothesis": "Нулевая гипотеза отвергается" if p_value < 0.05 else "Нулевая гипотеза не отвергается",
+                "result": "Средние значения групп равны" if p_value >= 0.05 else "Средние значения групп не равны"
             }
         else:
             return jsonify({"error": "Неизвестный тип теста"}), 400

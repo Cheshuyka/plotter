@@ -412,6 +412,9 @@
             <li data-type="t-test" draggable="true">t-test Стьюдента</li>
             <li data-type="mann-whitney" draggable="true">U-критерий Манна-Уитни</li>
             <li data-type="shapiro-wilk" draggable="true">Тест Шапиро-Уилка</li>
+            <li data-type="pearson" draggable="true">Коэффициент корреляции Пирсона</li>
+            <li data-type="spearman" draggable="true">Коэффициент корреляции Спирмена</li>
+            <li data-type="anova" draggable="true">ANOVA</li>
         </ul>
     </div>
 
@@ -464,8 +467,6 @@
                     <input type="text" class="yAxis" placeholder="Введите название колонки для оси Y">
                     <button class="toggle-fields">Дополнительные поля</button>
                     <div class="additional-fields">
-                        <label for="color">Цвет (опционально):</label>
-                        <input type="text" class="color" placeholder="Введите название колонки для цвета">
                         <label for="group">Группировка (опционально):</label>
                         <input type="text" class="group" placeholder="Введите название колонки для группировки">
                     </div>
@@ -476,8 +477,6 @@
                     <input type="text" class="values" placeholder="Введите название колонки для значений">
                     <button class="toggle-fields">Дополнительные поля</button>
                     <div class="additional-fields">
-                        <label for="color">Цвет (опционально):</label>
-                        <input type="text" class="color" placeholder="Введите название колонки для цвета">
                         <label for="group">Группировка (опционально):</label>
                         <input type="text" class="group" placeholder="Введите название колонки для группировки">
                     </div>
@@ -547,11 +546,9 @@
                 if (type === 'scatterplot' || type === 'lineplot') {
                     params.xAxis = block.querySelector('.xAxis').value;
                     params.yAxis = block.querySelector('.yAxis').value;
-                    params.color = block.querySelector('.color').value;
                     params.group = block.querySelector('.group').value;
                 } else if (type === 'boxplot' || type === 'histogram') {
                     params.values = block.querySelector('.values').value;
-                    params.color = block.querySelector('.color').value;
                     params.group = block.querySelector('.group').value;
                 } else if (type === 'piechart') {
                     params.values = block.querySelector('.values').value;
@@ -642,7 +639,7 @@
             const type = event.dataTransfer.getData('text/plain');
 
             // Определяем, что перетаскивается: график или статистический тест
-            if (type === 't-test Стьюдента' || type === 'U-критерий Манна-Уитни' || type === 'Тест Шапиро-Уилка') {
+            if (type === 't-test Стьюдента' || type === 'U-критерий Манна-Уитни' || type === 'Тест Шапиро-Уилка' || type == 'Коэффициент корреляции Пирсона' || type == 'Коэффициент корреляции Спирмена' || type == 'ANOVA') {
                 // Создаем блок для статистического теста
                 const block = createCriteriaBlock(type);
                 rightPanel.appendChild(block);
@@ -798,6 +795,27 @@
                     <label for="values">Значения:</label>
                     <input type="text" class="values" placeholder="Введите название колонки для значений">
                 `;
+            } else if (type === 'Коэффициент корреляции Пирсона') {
+                fields += `
+                    <label for="values_1">Значения(1):</label>
+                    <input type="text" class="values_1" placeholder="Введите название первой колонки для значений">
+                    <label for="values_2">Значения(2):</label>
+                    <input type="text" class="values_2" placeholder="Введите название второй колонки для значений">
+                `;
+            } else if (type === 'Коэффициент корреляции Спирмена') {
+                fields += `
+                    <label for="values_1">Значения(1):</label>
+                    <input type="text" class="values_1" placeholder="Введите название первой колонки для значений">
+                    <label for="values_2">Значения(2):</label>
+                    <input type="text" class="values_2" placeholder="Введите название второй колонки для значений">
+                `;
+            } else if (type === 'ANOVA') {
+                fields += `
+                    <label for="values">Значения:</label>
+                    <input type="text" class="values" placeholder="Введите название колонки для значений">
+                    <label for="group">Группировка:</label>
+                    <input type="text" class="group" placeholder="Введите название колонки для группировки">
+                `;
             }
 
             // Кнопки "Провести тест" и "Удалить"
@@ -813,13 +831,35 @@
 
             // Обработчик для кнопки "Провести тест"
             block.querySelector('.run-test').addEventListener('click', async () => {
-                const values = block.querySelector('.values').value;
-                const group = block.querySelector('.group') ? block.querySelector('.group').value : null;
+                let values;
+                let values_1;
+                let values_2;
+                let group;
+                console.log('something');
+                if (type === 'Коэффициент корреляции Пирсона' || type === 'Коэффициент корреляции Спирмена') {
+                    values_1 = block.querySelector('.values_1').value;
+                    values_2 = block.querySelector('.values_2').value;
+                    console.log('not ok1');
+                } else {
+                    values = block.querySelector('.values').value;
+                    group = block.querySelector('.group') ? block.querySelector('.group').value : null;
+                    console.log(values);
+                }
+                console.log(values);
 
                 // Проверка заполнения полей
-                if (!values || (type !== 'Тест Шапиро-Уилка' && !group)) {
-                    alert('Заполните все поля!');
-                    return;
+                if (type === 'Коэффициент корреляции Пирсона' || type === 'Коэффициент корреляции Спирмена') {
+                    console.log('not ok');
+                    if (!values_1 || !values_2) {
+                        alert('Заполните все поля!');
+                        return;
+                    }
+                } else {
+                    console.log('ok');
+                    if (!values || (type !== 'Тест Шапиро-Уилка' && !group)) {
+                        alert('Заполните все поля!');
+                        return;
+                    }
                 }
 
                 // Параметры для отправки на сервер
@@ -827,6 +867,8 @@
                     type: type,
                     values: values,
                     group: group,
+                    values_1: values_1,
+                    values_2: values_2
                 };
 
                 try {
